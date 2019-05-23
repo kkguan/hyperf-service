@@ -11,7 +11,7 @@ LABEL maintainer="hyperf <group@hyperf.org>" version="1.0"
 ##
 # ---------- env settings ----------
 ##
-ENV SWOOLE_VERSION=4.3.0 \
+ENV SWOOLE_VERSION=4.3.4 \
     #  install and remove building packages
     PHPIZE_DEPS="autoconf dpkg-dev dpkg file g++ gcc libc-dev make php7-dev php7-pear pkgconf re2c pcre-dev zlib-dev libtool automake"
 
@@ -40,21 +40,6 @@ RUN set -ex \
     && echo "extension=swoole.so" > /etc/php7/conf.d/swoole.ini \
     && echo "swoole.use_shortname = 'Off'" >> /etc/php7/conf.d/swoole.ini \
 
-    # php extension:grpc
-    && cd /tmp \
-    && git clone -b $(curl -L https://grpc.io/release) https://github.com/grpc/grpc \
-    && ( \
-        cd grpc \
-        && git submodule update --init \
-        && make && make install \
-        && cd src/php/ext/grpc \
-        && phpize \
-        && ./configure \
-        && make && make install \
-        && echo "extension=grpc.so" > /etc/php7/conf.d/grpc.ini \
-    ) \
-    && rm -rf /usr/local/bin/grpc* \
-
     # install composer
     && cd /tmp \
     && curl -sS https://getcomposer.org/installer | php \
@@ -68,3 +53,15 @@ RUN set -ex \
     && apk del .build-deps \
     && rm -rf /var/cache/apk/* /tmp/* /usr/share/man \
     && echo -e "\033[42;37m Build Completed :).\033[0m\n"
+
+COPY . /opt/www
+
+WORKDIR /opt/www
+
+RUN composer install --no-dev \
+    && composer dump-autoload -o \
+    && php /opt/www/bin/hyperf.php di:init-proxy
+
+EXPOSE 9501
+
+ENTRYPOINT ["php", "/opt/www/bin/hyperf.php", "start"]

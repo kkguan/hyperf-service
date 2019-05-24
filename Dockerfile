@@ -53,15 +53,3 @@ RUN set -ex \
     && apk del .build-deps \
     && rm -rf /var/cache/apk/* /tmp/* /usr/share/man \
     && echo -e "\033[42;37m Build Completed :).\033[0m\n"
-
-COPY . /opt/www
-
-WORKDIR /opt/www
-
-RUN composer install --no-dev \
-    && composer dump-autoload -o \
-    && php /opt/www/bin/hyperf.php di:init-proxy
-
-EXPOSE 9501
-
-ENTRYPOINT ["php", "/opt/www/bin/hyperf.php", "start"]
